@@ -251,7 +251,7 @@ function 批次匯入資料() {
 
 /**
  * 批次更新庫存（讀取→計算→寫回）
- * 說明：一次讀取所有庫存，計算庫存總值後批次寫回
+ * 說明：一次讀取所有庫存，計算庫存總值後批次寫回，並在低庫存時發送預警信
  */
 function 批次更新庫存() {
   try {
@@ -268,8 +268,12 @@ function 批次更新庫存() {
     var 庫存總值列 = [];
     var 庫存狀態列 = [];
     var 總庫存值 = 0;
+    
+    // 新增：用來收集低於安全庫存的商品清單
+    var 預警清單 = [];
 
     for (var i = 1; i < 資料.length; i++) {
+      var 商品名稱 = 資料[i][0]; // A: 商品名稱
       var 單價 = 資料[i][1];     // B: 單價
       var 安全庫存 = 資料[i][2]; // C: 安全庫存量
       var 目前庫存 = 資料[i][3]; // D: 目前庫存
@@ -277,12 +281,14 @@ function 批次更新庫存() {
 
       庫存總值列.push([庫存總值]);
 
-      // 判斷庫存狀態
+      // 判斷庫存狀態，並在低於安全庫存時加入預警清單
       var 狀態;
       if (目前庫存 <= 0) {
         狀態 = "🔴 缺貨";
+        預警清單.push("🔴 " + 商品名稱 + " (目前庫存: " + 目前庫存 + " / 安全庫存: " + 安全庫存 + ")");
       } else if (目前庫存 < 安全庫存) {
         狀態 = "🟡 低庫存";
+        預警清單.push("🟡 " + 商品名稱 + " (目前庫存: " + 目前庫存 + " / 安全庫存: " + 安全庫存 + ")");
       } else {
         狀態 = "🟢 正常";
       }
@@ -306,12 +312,67 @@ function 批次更新庫存() {
     sheet.getRange(總計列, 6).setValue(總庫存值);
     sheet.getRange(總計列, 6).setNumberFormat("#,##0").setFontWeight("bold").setBackground("#e8f5e9");
 
+    // Step 4：判斷是否需要發送預警信
+    var 提示訊息 = "✅ 庫存更新完成！\n總庫存值：NT$ " + 總庫存值.toLocaleString();
+    
+    if (預警清單.length > 0) {
+      // 修改為指定的收件人信箱 (可使用逗號分隔多個信箱)
+      var 接收信箱 = "jenniferchenatwork@gmail.com"; 
+      var 信件主旨 = "⚠️ 庫存預警通知：有商品低於安全庫存！";
+      var 信件內容 = "系統偵測到以下商品庫存不足，請盡快安排補貨：\n\n" + 
+                     預警清單.join("\n") + 
+                     "\n\n請至系統確認詳細資訊。";
+      
+      MailApp.sendEmail(接收信箱, 信件主旨, 信件內容);
+      
+      Logger.log("📧 已發送庫存預警信給：" + 接收信箱);
+      提示訊息 += "\n\n📧 偵測到缺貨商品，已發送預警信至 " + 接收信箱 + "！";
+    }
+
     Logger.log("✅ 庫存更新完成！總庫存值：NT$" + 總庫存值.toLocaleString());
-    SpreadsheetApp.getUi().alert("✅ 庫存更新完成！\n總庫存值：NT$ " + 總庫存值.toLocaleString());
+    
+    // 加上 try...catch：因為如果是被「排程」自動觸發執行，背景不會有試算表 UI 畫面可以顯示 alert
+    // 若沒有 try...catch 捕捉，排程執行時遇到 getUi().alert() 會發生錯誤而中斷。
+    try {
+      SpreadsheetApp.getUi().alert(提示訊息);
+    } catch (e) {
+      Logger.log("背景排程執行完畢。");
+    }
 
   } catch (錯誤) {
     Logger.log("❌ 錯誤：" + 錯誤.message);
   }
+}
+
+// ============================================================
+// 排程自動化
+// ============================================================
+
+/**
+ * 建立排程：每週一早上自動執行「批次更新庫存」
+ * 您可以手動點擊執行此函數，或是從試算表選單中點擊
+ */
+function 設定每週一發送排程() {
+  // 1. 先清除舊的同名排程，避免重複建立導致發送多封信
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === "批次更新庫存") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+
+  // 2. 建立新的排程：每週一早上 8:00~9:00 之間自動執行
+  ScriptApp.newTrigger("批次更新庫存")
+    .timeBased()
+    .onWeekDay(ScriptApp.WeekDay.MONDAY)
+    .atHour(8)
+    .create();
+    
+  Logger.log("✅ 已成功設定每週一早上 8:00 自動檢查庫存的排程！");
+  
+  try {
+    SpreadsheetApp.getUi().alert("✅ 已成功設定每週一早上 8:00 自動檢查庫存的排程！\n系統每週一將會自動在背景執行並發送預警信。");
+  } catch (e) {}
 }
 
 // ============================================================
@@ -379,5 +440,7 @@ function onOpen() {
     .addSeparator()
     .addItem("❌ 不良示範：逐格讀寫", "不良示範_逐格讀寫")
     .addItem("✅ 正確示範：批次讀寫", "正確示範_批次讀寫")
+    .addSeparator()
+    .addItem("⏰ 設定每週一發送排程", "設定每週一發送排程")
     .addToUi();
 }

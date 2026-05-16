@@ -539,6 +539,112 @@ function 初始化員工資料() {
 }
 
 // ============================================================
+// 第五部分：自動寄送 Email 彙整
+// ============================================================
+
+/**
+ * 寄送週報彙整
+ * 說明：將當週的薪資週報表資料彙整為 Email，並寄送給指定收件者
+ */
+function 寄送週報彙整() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // 計算當週表名 (同自動建立週報表的邏輯)
+    var 今天 = new Date();
+    var 週一 = new Date(今天);
+    週一.setDate(今天.getDate() - 今天.getDay() + 1);
+    var 週五 = new Date(週一);
+    週五.setDate(週一.getDate() + 4);
+    var 週區間 = Utilities.formatDate(週一, "Asia/Taipei", "MMdd") + "-" + Utilities.formatDate(週五, "Asia/Taipei", "MMdd");
+    var 表名 = 週區間 + "薪資週報表";
+    
+    var sheet = ss.getSheetByName(表名);
+    if (!sheet) {
+      Logger.log("❌ 找不到當週的工作表：" + 表名 + "，請先建立報表。");
+      SpreadsheetApp.getUi().alert("❌ 找不到當週的工作表：" + 表名 + "，請先建立報表。");
+      return;
+    }
+    
+    // 取得資料
+    var 最後一列 = sheet.getLastRow();
+    var 最後一欄 = sheet.getLastColumn();
+    if (最後一列 < 2) return;
+    
+    var 資料 = sheet.getRange(1, 1, 最後一列, 最後一欄).getValues();
+    
+    // 建立 HTML 表格
+    var html = "<h2>" + 表名 + " 彙整報告</h2>";
+    html += "<p>請參考以下本週薪資與加班費彙整，詳細資料請點擊<a href='" + ss.getUrl() + "'>試算表連結</a>查看。</p>";
+    html += "<table border='1' style='border-collapse: collapse; text-align: center; width: 100%;'>";
+    
+    var 總發放金額 = 0;
+    
+    for (var i = 0; i < 資料.length; i++) {
+      var 列資料 = 資料[i];
+      if (i === 0) {
+        // 標題列
+        html += "<tr style='background-color: #34a853; color: white;'>";
+        for (var j = 0; j < 列資料.length; j++) {
+          html += "<th style='padding: 8px;'>" + 列資料[j] + "</th>";
+        }
+        html += "</tr>";
+      } else {
+        // 內容列
+        html += "<tr>";
+        for (var j = 0; j < 列資料.length; j++) {
+          html += "<td style='padding: 8px;'>" + 列資料[j] + "</td>";
+        }
+        html += "</tr>";
+        總發放金額 += Number(列資料[4]) || 0; // 累加總計
+      }
+    }
+    html += "</table>";
+    html += "<h3>本週總發放金額：" + 總發放金額.toLocaleString() + " 元</h3>";
+    
+    // 寄送 Email
+    var 收件者 = "jenniferchenatwork@gmail.com";
+    var 主旨 = "【自動彙整】" + 表名;
+    
+    MailApp.sendEmail({
+      to: 收件者,
+      subject: 主旨,
+      htmlBody: html
+    });
+    
+    Logger.log("✅ 彙整報告已成功寄送至：" + 收件者);
+    SpreadsheetApp.getUi().alert("✅ 彙整報告已成功寄送至：" + 收件者);
+  } catch (錯誤) {
+    Logger.log("❌ 寄送失敗：" + 錯誤.message);
+    SpreadsheetApp.getUi().alert("❌ 寄送失敗：" + 錯誤.message);
+  }
+}
+
+/**
+ * 設定週一寄送彙整觸發器
+ * 說明：每週一早上 9 點自動寄送當週報告
+ */
+function 設定週一寄送彙整觸發器() {
+  // 刪除既有的寄送觸發器
+  var 觸發器列表 = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < 觸發器列表.length; i++) {
+    if (觸發器列表[i].getHandlerFunction() === "寄送週報彙整") {
+      ScriptApp.deleteTrigger(觸發器列表[i]);
+    }
+  }
+  
+  // 建立每週一早上 9 點的觸發器
+  ScriptApp.newTrigger("寄送週報彙整")
+    .timeBased()
+    .onWeekDay(ScriptApp.WeekDay.MONDAY)
+    .atHour(9)
+    .create();
+    
+  Logger.log("✅ 觸發器已設定");
+  SpreadsheetApp.getUi().alert("✅ 已設定每週一早上 9:00 自動寄送彙整報告至 jenniferchenatwork@gmail.com！\n（請確保在 9:00 以前已產生該週報表）");
+}
+
+// ============================================================
 // 自訂選單
 // ============================================================
 
@@ -552,7 +658,10 @@ function onOpen() {
     .addSeparator()
     .addItem("📅 建立當月報表", "自動建立月報表")
     .addItem("📅 建立當週報表", "自動建立週報表")
+    .addItem("📧 手動寄送週報彙整", "寄送週報彙整")
+    .addSeparator()
     .addItem("⏰ 設定每日觸發器", "設定每日觸發器")
+    .addItem("⏰ 設定週一寄送觸發器", "設定週一寄送彙整觸發器")
     .addItem("🗑️ 刪除所有觸發器", "刪除所有觸發器")
     .addToUi();
 }

@@ -354,6 +354,153 @@ function 生成專案摘要() {
   }
 }
 
+/**
+ * 將專案依優先級分組並生成摘要 (輸出至獨立工作表)
+ */
+function 生成優先級摘要() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var 專案表 = ss.getSheetByName("專案追蹤");
+    if (!專案表) {
+      SpreadsheetApp.getUi().alert("❌ 找不到「專案追蹤」工作表");
+      return;
+    }
+
+    // 先更新狀態以確保狀態欄位有值
+    定時更新專案狀態();
+
+    var 資料 = 專案表.getDataRange().getValues();
+    var 標題 = 資料[0];
+    var 專案列表 = [];
+    for (var i = 1; i < 資料.length; i++) {
+      var obj = {};
+      for (var j = 0; j < 標題.length; j++) {
+        obj[標題[j]] = 資料[i][j];
+      }
+      專案列表.push(obj);
+    }
+
+    var 分組結果 = 依欄位分組(專案列表, "優先級");
+    
+    // 建立或清除「優先級摘要」工作表
+    var 摘要表 = ss.getSheetByName("優先級摘要");
+    if (摘要表) {
+      摘要表.clear();
+    } else {
+      摘要表 = ss.insertSheet("優先級摘要");
+    }
+
+    摘要表.getRange("A1").setValue("📌 專案優先級摘要");
+    摘要表.getRange("A1").setFontSize(16).setFontWeight("bold");
+    摘要表.getRange("A2").setValue("更新時間：" + Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm"));
+
+    var 目前列 = 4;
+    var 順序 = ["高", "中", "低"];
+    
+    for (var k = 0; k < 順序.length; k++) {
+      var 級別 = 順序[k];
+      var 該級別專案 = 分組結果[級別] || [];
+      
+      摘要表.getRange(目前列, 1).setValue("🎯 優先級：" + 級別 + " (" + 該級別專案.length + " 個專案)");
+      摘要表.getRange(目前列, 1, 1, 5).merge();
+      摘要表.getRange(目前列, 1).setFontSize(13).setFontWeight("bold").setBackground("#ffcc80");
+      目前列++;
+
+      if (該級別專案.length > 0) {
+        摘要表.getRange(目前列, 1, 1, 5).setValues([["專案名稱", "負責人", "截止日期", "進度(%)", "狀態"]]);
+        摘要表.getRange(目前列, 1, 1, 5).setFontWeight("bold").setBackground("#ffe082");
+        目前列++;
+        
+        for (var m = 0; m < 該級別專案.length; m++) {
+          var 專案 = 該級別專案[m];
+          var 截止日 = "";
+          if (專案["截止日期"]) {
+            截止日 = Utilities.formatDate(new Date(專案["截止日期"]), "Asia/Taipei", "yyyy/MM/dd");
+          }
+          摘要表.getRange(目前列, 1, 1, 5).setValues([
+            [專案["專案名稱"], 專案["負責人"], 截止日, 專案["進度(%)"], 專案["狀態"]]
+          ]);
+          目前列++;
+        }
+      }
+      目前列++; // 空一列
+    }
+
+    for (var c = 1; c <= 5; c++) 摘要表.autoResizeColumn(c);
+
+    SpreadsheetApp.getUi().alert("✅ 優先級摘要已生成！請查看「優先級摘要」工作表。");
+
+  } catch (錯誤) {
+    Logger.log("❌ 錯誤：" + 錯誤.message);
+  }
+}
+
+/**
+ * 自動計算每個部門的平均薪資並產生薪資報表
+ */
+function 生成薪資報表() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var 人員表 = ss.getSheetByName("專案人員");
+    if (!人員表) {
+      SpreadsheetApp.getUi().alert("❌ 找不到「專案人員」工作表");
+      return;
+    }
+
+    var 資料 = 人員表.getDataRange().getValues();
+    var 標題 = 資料[0];
+    var 員工 = [];
+    for (var i = 1; i < 資料.length; i++) {
+      var obj = {};
+      for (var j = 0; j < 標題.length; j++) {
+        obj[標題[j]] = 資料[i][j];
+      }
+      員工.push(obj);
+    }
+
+    var 部門 = 依欄位分組(員工, "部門");
+    var 薪資統計 = [];
+    
+    for (var 部門名 in 部門) {
+      var 成員 = 部門[部門名];
+      var 薪資總和 = 0;
+      for (var n = 0; n < 成員.length; n++) {
+        薪資總和 += Number(成員[n]["月薪"]) || 0;
+      }
+      var 平均薪資 = Math.round(薪資總和 / 成員.length);
+      薪資統計.push([部門名, 成員.length, 平均薪資]);
+    }
+
+    var 報表表 = ss.getSheetByName("薪資報表");
+    if (報表表) {
+      報表表.clear();
+    } else {
+      報表表 = ss.insertSheet("薪資報表");
+    }
+
+    報表表.getRange("A1").setValue("💰 部門平均薪資報表");
+    報表表.getRange("A1").setFontSize(16).setFontWeight("bold");
+    報表表.getRange("A2").setValue("更新時間：" + Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm"));
+
+    var 標題列 = [["部門", "人數", "平均月薪"]];
+    報表表.getRange(4, 1, 1, 3).setValues(標題列)
+      .setFontWeight("bold")
+      .setBackground("#c8e6c9");
+
+    if (薪資統計.length > 0) {
+      報表表.getRange(5, 1, 薪資統計.length, 3).setValues(薪資統計);
+      報表表.getRange(5, 3, 薪資統計.length, 1).setNumberFormat("#,##0");
+    }
+
+    for (var c = 1; c <= 3; c++) 報表表.autoResizeColumn(c);
+
+    SpreadsheetApp.getUi().alert("✅ 薪資報表已生成！請查看「薪資報表」工作表。");
+    
+  } catch (錯誤) {
+    Logger.log("❌ 錯誤：" + 錯誤.message);
+  }
+}
+
 // ============================================================
 // 初始化範例資料
 // ============================================================
@@ -423,6 +570,8 @@ function onOpen() {
     .addItem("📋 生成部門清單", "生成部門清單")
     .addItem("📊 更新專案狀態", "定時更新專案狀態")
     .addItem("📈 專案進度摘要", "生成專案摘要")
+    .addItem("📌 專案優先級摘要", "生成優先級摘要")
+    .addItem("💰 產生薪資報表", "生成薪資報表")
     .addSeparator()
     .addItem("🔬 函數進階示範", "函數進階示範")
     .addItem("🗂️ 資料結構化示範", "資料結構化示範")

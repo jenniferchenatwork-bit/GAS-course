@@ -365,6 +365,161 @@ function 初始化銷售資料() {
 }
 
 // ============================================================
+// 第五部分：進階銷售分析
+// ============================================================
+
+/**
+ * 生成進階銷售分析（每月統計與排名）
+ */
+function 生成進階銷售分析() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("銷售紀錄");
+    if (!sheet) {
+      SpreadsheetApp.getUi().alert("❌ 請先執行「初始化銷售資料」");
+      return;
+    }
+
+    var 資料 = sheet.getDataRange().getValues();
+    var 標題 = 資料[0];
+
+    // 轉成物件陣列
+    var 銷售 = [];
+    for (var i = 1; i < 資料.length; i++) {
+      var obj = {};
+      for (var j = 0; j < 標題.length; j++) {
+        obj[標題[j]] = 資料[i][j];
+      }
+      銷售.push(obj);
+    }
+
+    // 統計物件
+    var 每月統計 = {};
+    var 年度客戶 = {};
+
+    銷售.forEach(function(item) {
+      var 日期 = item["日期"];
+      if (!(日期 instanceof Date)) 日期 = new Date(日期);
+      if (isNaN(日期.getTime())) return;
+      
+      var 月份 = Utilities.formatDate(日期, "Asia/Taipei", "yyyy/MM");
+      var 客戶 = item["客戶"];
+      var 業務 = item["業務"];
+      var 商品 = item["商品"];
+      var 金額 = item["金額"] || 0;
+
+      // 初始化每月統計
+      if (!每月統計[月份]) {
+        每月統計[月份] = { 總額: 0, 筆數: 0, 客戶資料: {} };
+      }
+      每月統計[月份].總額 += 金額;
+      每月統計[月份].筆數++;
+
+      // 每月客戶資料
+      if (!每月統計[月份].客戶資料[客戶]) {
+        每月統計[月份].客戶資料[客戶] = { 總額: 0, 業務清單: {}, 商品清單: {} };
+      }
+      每月統計[月份].客戶資料[客戶].總額 += 金額;
+      每月統計[月份].客戶資料[客戶].業務清單[業務] = true;
+      每月統計[月份].客戶資料[客戶].商品清單[商品] = true;
+
+      // 年度客戶資料
+      if (!年度客戶[客戶]) {
+        年度客戶[客戶] = { 總額: 0, 業務清單: {}, 商品清單: {} };
+      }
+      年度客戶[客戶].總額 += 金額;
+      年度客戶[客戶].業務清單[業務] = true;
+      年度客戶[客戶].商品清單[商品] = true;
+    });
+
+    // 建立新分頁
+    var 分析表 = ss.getSheetByName("進階銷售分析");
+    if (分析表) 分析表.clear(); 
+    else 分析表 = ss.insertSheet("進階銷售分析");
+
+    var 列 = 1;
+
+    // --- 第一部分：每月銷售對照表 ---
+    分析表.getRange(列, 1).setValue("📅 每月銷售對照表").setFontSize(14).setFontWeight("bold");
+    列++;
+    分析表.getRange(列, 1, 1, 3).setValues([["月份", "總筆數", "總金額"]]).setBackground("#1a73e8").setFontColor("#fff").setFontWeight("bold");
+    列++;
+
+    var 月份排序 = Object.keys(每月統計).sort();
+    
+    月份排序.forEach(function(月) {
+      var 統計 = 每月統計[月];
+      分析表.getRange(列, 1, 1, 3).setValues([[月, 統計.筆數, 統計.總額]]);
+      分析表.getRange(列, 3).setNumberFormat("#,##0");
+      列++;
+    });
+
+    列 += 2;
+
+    // --- 第二部分：每月前 5 名客戶 ---
+    分析表.getRange(列, 1).setValue("🏆 每月最高前 5 名客戶").setFontSize(14).setFontWeight("bold");
+    列++;
+
+    月份排序.forEach(function(月) {
+      分析表.getRange(列, 1).setValue("【" + 月 + "】").setFontWeight("bold");
+      列++;
+      分析表.getRange(列, 1, 1, 5).setValues([["排名", "客戶", "負責業務", "商品", "消費總額"]]).setBackground("#34a853").setFontColor("#fff").setFontWeight("bold");
+      列++;
+
+      var 月份客戶 = 每月統計[月].客戶資料;
+      var 月客戶排序 = Object.keys(月份客戶).sort(function(a, b) {
+        return 月份客戶[b].總額 - 月份客戶[a].總額;
+      });
+
+      var 排名 = 1;
+      for (var i = 0; i < Math.min(5, 月客戶排序.length); i++) {
+        var 客戶名 = 月客戶排序[i];
+        var 資料 = 月份客戶[客戶名];
+        var 業務字串 = Object.keys(資料.業務清單).join(", ");
+        var 商品字串 = Object.keys(資料.商品清單).join(", ");
+        
+        分析表.getRange(列, 1, 1, 5).setValues([[排名, 客戶名, 業務字串, 商品字串, 資料.總額]]);
+        分析表.getRange(列, 5).setNumberFormat("#,##0");
+        列++;
+        排名++;
+      }
+      列++; // 月與月之間空一列
+    });
+
+    // --- 第三部分：年度前 10 名客戶 ---
+    分析表.getRange(列, 1).setValue("🌟 年度總排行：前 10 名客戶").setFontSize(14).setFontWeight("bold");
+    列++;
+    分析表.getRange(列, 1, 1, 5).setValues([["排名", "客戶", "負責業務", "商品", "消費總額"]]).setBackground("#fbbc04").setFontColor("#000").setFontWeight("bold");
+    列++;
+
+    var 年客戶排序 = Object.keys(年度客戶).sort(function(a, b) {
+      return 年度客戶[b].總額 - 年度客戶[a].總額;
+    });
+
+    var 總排名 = 1;
+    for (var j = 0; j < Math.min(10, 年客戶排序.length); j++) {
+      var 客戶名 = 年客戶排序[j];
+      var 資料 = 年度客戶[客戶名];
+      var 業務字串 = Object.keys(資料.業務清單).join(", ");
+      var 商品字串 = Object.keys(資料.商品清單).join(", ");
+      
+      分析表.getRange(列, 1, 1, 5).setValues([[總排名, 客戶名, 業務字串, 商品字串, 資料.總額]]);
+      分析表.getRange(列, 5).setNumberFormat("#,##0");
+      列++;
+      總排名++;
+    }
+
+    // 自動調整欄寬
+    for (var c = 1; c <= 5; c++) 分析表.autoResizeColumn(c);
+
+    SpreadsheetApp.getUi().alert("✅ 每月進階銷售分析與排名報告已生成！\n請查看「進階銷售分析」工作表。");
+
+  } catch (錯誤) {
+    Logger.log("❌ 錯誤：" + 錯誤.message);
+  }
+}
+
+// ============================================================
 // 自訂選單
 // ============================================================
 
@@ -378,5 +533,6 @@ function onOpen() {
     .addItem("📊 生成銷售摘要", "生成銷售摘要")
     .addItem("🧹 自動資料清理", "自動資料清理")
     .addItem("📤 匯出篩選結果", "匯出篩選結果")
+    .addItem("📈 生成進階銷售分析", "生成進階銷售分析")
     .addToUi();
 }
