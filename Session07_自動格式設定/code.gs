@@ -48,7 +48,7 @@ function 文字格式設定() {
   sheet.getRange("B3").setValue("靠右").setHorizontalAlignment("right");
 
   // --- 垂直對齊 ---
-  sheet.getRange("C1:C3").setRowHeight(50);
+  sheet.setRowHeights(1, 3, 50);
   sheet.getRange("C1").setValue("上").setVerticalAlignment("top");
   sheet.getRange("C2").setValue("中").setVerticalAlignment("middle");
   sheet.getRange("C3").setValue("下").setVerticalAlignment("bottom");
@@ -203,7 +203,7 @@ function 自動生成格式表格() {
     sheet.getRange("A4:F4").setValues(標題);
     sheet.getRange("A4:F4")
       .setBackground("#1a237e")
-      .setFontColor("#ffffff")
+      .setFontColor("#000000")
       .setFontWeight("bold")
       .setFontSize(11)
       .setHorizontalAlignment("center");
@@ -307,7 +307,7 @@ function 一鍵美化() {
     // 標題列格式
     var 標題 = sheet.getRange(1, 1, 1, 最後欄);
     標題.setBackground("#2196f3");
-    標題.setFontColor("#ffffff");
+    標題.setFontColor("#000000");
     標題.setFontWeight("bold");
     標題.setFontSize(11);
     標題.setHorizontalAlignment("center");
