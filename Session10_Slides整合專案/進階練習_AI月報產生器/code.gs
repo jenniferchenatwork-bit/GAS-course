@@ -150,11 +150,27 @@ function 產生AI月報簡報() {
     end.getText().getTextStyle().setFontSize(32).setBold(true).setForegroundColor("#fff");
     end.getText().getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER);
 
+    // 儲存並關閉簡報以確保所有變更都寫入
+    ppt.saveAndClose();
+
+    // ===== 轉成 PDF 並寄送 Email =====
+    var pptFile = DriveApp.getFileById(ppt.getId());
+    var pdfBlob = pptFile.getAs(MimeType.PDF).setName(ppt.getName() + ".pdf");
+    
+    var 主管Email = "jenniferchenatwork@gmail.com";
+    MailApp.sendEmail({
+      to: 主管Email,
+      subject: "📊 " + 月份 + " 營運月報簡報 (AI 自動生成)",
+      body: "主管您好：\n\n本月的 AI 營運月報簡報已自動生成，請參閱附件 PDF 檔案，或是點擊下方連結直接線上瀏覽簡報。\n\n🔗 簡報線上瀏覽連結：\n" + ppt.getUrl() + "\n\n祝 順心\nAI 自動排版系統",
+      attachments: [pdfBlob]
+    });
+
     var 耗時 = Math.round((new Date() - 開始) / 1000);
     SpreadsheetApp.getUi().alert(
       "🎉 AI 月報簡報已完成！\n\n" +
-      "📄 共 " + ppt.getSlides().length + " 頁 ｜ ⏱️ " + 耗時 + " 秒\n\n" +
-      "🔗 " + ppt.getUrl()
+      "📄 共 " + ppt.getSlides().length + " 頁 ｜ ⏱️ " + 耗時 + " 秒\n" +
+      "📧 PDF 簡報已成功寄送至主管信箱：" + 主管Email + "\n\n" +
+      "🔗 線上簡報連結：" + ppt.getUrl()
     );
 
   } catch (錯誤) {

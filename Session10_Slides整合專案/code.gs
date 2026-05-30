@@ -31,7 +31,7 @@ function 建立基本簡報() {
     var 標題頁 = presentation.getSlides()[0];
 
     // 取得標題佔位符
-    var 標題 = 標題頁.getPlaceholder(SlidesApp.PlaceholderType.CENTER_TITLE);
+    var 標題 = 標題頁.getPlaceholder(SlidesApp.PlaceholderType.CENTERED_TITLE);
     if (標題) {
       標題.asShape().getText().setText("📊 2026 年度營運報告");
       var 文字樣式 = 標題.asShape().getText().getTextStyle();
