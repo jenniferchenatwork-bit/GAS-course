@@ -41,13 +41,13 @@ function 產生AI月報簡報() {
 
     var badge = p1.insertShape(SlidesApp.ShapeType.ROUND_RECTANGLE, 260, 30, 200, 35);
     badge.getFill().setSolidFill("#1a73e8");
-    badge.getBorder().setWeight(0);
+    badge.getBorder().setTransparent();
     var badgeText = p1.insertTextBox("🤖 AI 自動產生", 270, 33, 180, 28);
-    badgeText.getText().getTextStyle().setFontSize(11).setForegroundColor("#fff");
+    badgeText.getText().getTextStyle().setFontSize(11).setForegroundColor("#ffffff");
     badgeText.getText().getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER);
 
     var 標題 = p1.insertTextBox("📊 " + 月份 + "\n營運月報", 40, 120, 640, 120);
-    標題.getText().getTextStyle().setFontSize(40).setBold(true).setForegroundColor("#fff");
+    標題.getText().getTextStyle().setFontSize(40).setBold(true).setForegroundColor("#ffffff");
     標題.getText().getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER);
 
     var 副標 = p1.insertTextBox(
@@ -76,14 +76,14 @@ function 產生AI月報簡報() {
       var x = 30 + idx * 170;
       var card = p2.insertShape(SlidesApp.ShapeType.ROUND_RECTANGLE, x, 75, 155, 140);
       card.getFill().setSolidFill(kpi.color);
-      card.getBorder().setWeight(0);
+      card.getBorder().setTransparent();
 
       var icon = p2.insertTextBox(kpi.icon, x + 10, 85, 135, 35);
       icon.getText().getTextStyle().setFontSize(28);
       icon.getText().getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER);
 
       var val = p2.insertTextBox(kpi.value, x + 10, 120, 135, 35);
-      val.getText().getTextStyle().setFontSize(18).setBold(true).setForegroundColor("#fff");
+      val.getText().getTextStyle().setFontSize(18).setBold(true).setForegroundColor("#ffffff");
       val.getText().getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER);
 
       var lbl = p2.insertTextBox(kpi.label, x + 10, 160, 135, 25);
@@ -110,7 +110,7 @@ function 產生AI月報簡報() {
     var 圖表列表 = 業績表.getCharts();
     if (圖表列表.length > 0) {
       var p3 = ppt.appendSlide(SlidesApp.PredefinedLayout.BLANK);
-      p3.getBackground().setSolidFill("#fff");
+      p3.getBackground().setSolidFill("#ffffff");
       var ct = p3.insertTextBox("📈 營運趨勢圖表", 40, 10, 640, 35);
       ct.getText().getTextStyle().setFontSize(22).setBold(true).setForegroundColor("#0a1628");
 
@@ -136,7 +136,7 @@ function 產生AI月報簡報() {
         table.getCell(ri, ci).getText().getTextStyle().setFontSize(10);
         if (ri === 0) {
           table.getCell(ri, ci).getFill().setSolidFill("#0a1628");
-          table.getCell(ri, ci).getText().getTextStyle().setForegroundColor("#fff").setBold(true);
+          table.getCell(ri, ci).getText().getTextStyle().setForegroundColor("#ffffff").setBold(true);
         } else if (ri % 2 === 0) {
           table.getCell(ri, ci).getFill().setSolidFill("#e3f2fd");
         }
@@ -147,7 +147,7 @@ function 產生AI月報簡報() {
     var pEnd = ppt.appendSlide(SlidesApp.PredefinedLayout.BLANK);
     pEnd.getBackground().setSolidFill("#0a1628");
     var end = pEnd.insertTextBox("謝謝聆聽\n\n🤖 本報告由 AI 自動產生", 40, 140, 640, 120);
-    end.getText().getTextStyle().setFontSize(32).setBold(true).setForegroundColor("#fff");
+    end.getText().getTextStyle().setFontSize(32).setBold(true).setForegroundColor("#ffffff");
     end.getText().getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.CENTER);
 
     // 儲存並關閉簡報以確保所有變更都寫入
@@ -196,7 +196,7 @@ function 初始化月報資料() {
 
   sheet.getRange(1, 1, 1, 5).setValues(標題);
   sheet.getRange(2, 1, 資料.length, 5).setValues(資料);
-  sheet.getRange("A1:E1").setBackground("#0a1628").setFontColor("#fff").setFontWeight("bold");
+  sheet.getRange("A1:E1").setBackground("#0a1628").setFontColor("#ffffff").setFontWeight("bold");
   sheet.getRange("B2:C7").setNumberFormat("#,##0");
   sheet.setFrozenRows(1);
   for (var c = 1; c <= 5; c++) sheet.autoResizeColumn(c);

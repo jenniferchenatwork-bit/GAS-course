@@ -40,6 +40,8 @@ function 建立柱狀圖() {
     var chart = sheet.newChart()
       .setChartType(Charts.ChartType.COLUMN)        // 柱狀圖
       .addRange(資料範圍)                              // 資料來源
+      .setNumHeaders(1)                                // 將第一列設為標題（避免標籤顯示為 Column A, B 等）
+      .setOption("useFirstColumnAsDomain", true)       // 將第一欄設為 X 軸標籤
       .setPosition(9, 1, 0, 0)                        // 位置：第 9 列、第 1 欄
       .setOption("title", "部門季度業績")              // 標題
       .setOption("titleTextStyle", {
@@ -61,6 +63,12 @@ function 建立柱狀圖() {
       })
       .setOption("colors", ["#1a73e8", "#34a853", "#fbbc04", "#ea4335"])  // 自訂顏色
       .setOption("isStacked", false)                   // 非堆疊
+      .setOption("series", {                            // 顯示數值資料標籤
+        0: { dataLabel: "value" },
+        1: { dataLabel: "value" },
+        2: { dataLabel: "value" },
+        3: { dataLabel: "value" }
+      })
       .build();
 
     sheet.insertChart(chart);
@@ -87,6 +95,8 @@ function 建立堆疊柱狀圖() {
     var chart = sheet.newChart()
       .setChartType(Charts.ChartType.COLUMN)
       .addRange(資料範圍)
+      .setNumHeaders(1)                                // 將第一列設為標題
+      .setOption("useFirstColumnAsDomain", true)       // 將第一欄設為 X 軸標籤
       .setPosition(9, 6, 0, 0)
       .setOption("title", "部門季度業績（堆疊）")
       .setOption("titleTextStyle", { fontSize: 14, bold: true })
@@ -96,6 +106,12 @@ function 建立堆疊柱狀圖() {
       .setOption("legend", { position: "bottom" })
       .setOption("colors", ["#1a73e8", "#34a853", "#fbbc04", "#ea4335"])
       .setOption("vAxis", { format: "#,##0" })
+      .setOption("series", {                            // 顯示數值資料標籤
+        0: { dataLabel: "value" },
+        1: { dataLabel: "value" },
+        2: { dataLabel: "value" },
+        3: { dataLabel: "value" }
+      })
       .build();
 
     sheet.insertChart(chart);
@@ -130,6 +146,8 @@ function 建立折線圖() {
     var chart = sheet.newChart()
       .setChartType(Charts.ChartType.LINE)             // 折線圖
       .addRange(資料範圍)
+      .setNumHeaders(1)                                // 將第一列設為標題
+      .setOption("useFirstColumnAsDomain", true)       // 將第一欄設為 X 軸標籤
       .setPosition(15, 1, 0, 0)
       .setOption("title", "2026 年月度營收趨勢")
       .setOption("titleTextStyle", { fontSize: 16, bold: true, color: "#1a237e" })

@@ -14,7 +14,7 @@
 // ============================================================
 
 /**
- * 建立新的 Google Slides 簡報
+ * 建立新的 Google Slides 簡報ss
  * 說明：示範如何用程式碼建立和操作簡報
  */
 function 建立基本簡報() {
@@ -85,7 +85,7 @@ function 建立多頁簡報() {
     第1頁.getBackground().setSolidFill("#1a237e");
 
     // 清除預設佈局，改用自訂元素
-    第1頁.getPlaceholders().forEach(function(p) { p.remove(); });
+    第1頁.getPlaceholders().forEach(function (p) { p.remove(); });
 
     // 加入標題文字方塊
     var 標題框 = 第1頁.insertTextBox("📊 季度營運分析報告", 50, 150, 620, 80);
@@ -311,7 +311,7 @@ function 一鍵產生報表簡報() {
     }
 
     // 排序：年度業績由高到低
-    部門統計.sort(function(a, b) { return b.年度 - a.年度; });
+    部門統計.sort(function (a, b) { return b.年度 - a.年度; });
 
     var 月度統計 = [];
     var 最高月營收 = 0, 最高月 = "";
@@ -339,7 +339,7 @@ function 一鍵產生報表簡報() {
     // --- 第 1 頁：封面 ---
     var 封面 = ppt.getSlides()[0];
     封面.getBackground().setSolidFill("#0d47a1");
-    封面.getPlaceholders().forEach(function(p) { p.remove(); });
+    封面.getPlaceholders().forEach(function (p) { p.remove(); });
 
     var t1 = 封面.insertTextBox("📊 2026 年度營運分析報告", 40, 130, 640, 80);
     t1.getText().getTextStyle().setFontSize(36).setBold(true).setForegroundColor("#ffffff");

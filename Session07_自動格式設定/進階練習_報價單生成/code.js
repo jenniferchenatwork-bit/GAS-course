@@ -49,7 +49,7 @@ function 生成報價單() {
       ["報價編號", 編號, "", "客戶名稱", 客戶, ""],
       ["報價日期", Utilities.formatDate(今天, "Asia/Taipei", "yyyy/MM/dd"), "", "聯絡人", "", ""],
       ["有效期限", Utilities.formatDate(有效日, "Asia/Taipei", "yyyy/MM/dd"), "", "聯絡電話", "", ""],
-      ["業務人員", "林冠廷", "", "傳真", "", ""]
+      ["業務人員", "Elena Wang", "", "傳真", "", ""]
     ]);
 
     for (var r = 6; r <= 9; r++) {
