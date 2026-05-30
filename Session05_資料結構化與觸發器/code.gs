@@ -298,7 +298,8 @@ function 生成部門清單() {
       目前列++; // 空一列
     }
 
-    // 調整欄寬
+    // 凍結首列 & 調整欄寬
+    清單表.setFrozenRows(1);
     for (var c = 1; c <= 4; c++) {
       清單表.autoResizeColumn(c);
     }
